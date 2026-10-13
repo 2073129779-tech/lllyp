@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>加班记录</title>
+<meta name="theme-color" content="#f5f5f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{
+  --bg:#f5f5f7; --card:#fff; --text:#1d1d1f; --sub:#6e6e73; --line:#e8e8ed;
+  --accent:#0071e3; --rest:#8e8e93; --holiday:#ff3b30; --swap:#ff9500;
+  --tint-rest:#f5f5f7; --tint-holiday:#fff1f0; --tint-swap:#fff7e6;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#000;--card:#1c1c1e;--text:#f5f5f7;--sub:#98989d;--line:#2c2c2e;
+        --tint-rest:#1c1c1e;--tint-holiday:#2a1414;--tint-swap:#2a2010;}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
+  padding:env(safe-area-inset-top) 0 calc(24px + env(safe-area-inset-bottom))}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px}
+h1{font-size:28px;font-weight:600;letter-spacing:-.4px;margin:0}
+.sub{color:var(--sub);font-size:13px;margin-top:2px}
+.card{background:var(--card);border-radius:18px;padding:18px;margin-top:14px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.05)}
+.row{display:flex;align-items:center;justify-content:space-between}
+.nav{display:flex;align-items:center;gap:6px}
+.nav button{width:34px;height:34px;border:0;border-radius:50%;background:var(--card);color:var(--text);
+  font-size:17px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.mtitle{font-size:17px;font-weight:600;min-width:118px;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;text-align:center}
+.stats b{display:block;font-size:21px;font-weight:600;letter-spacing:-.3px}
+.stats span{font-size:11px;color:var(--sub)}
+.wk,.grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.wk div{text-align:center;font-size:11px;color:var(--sub);padding:6px 0}
+.cell{position:relative;aspect-ratio:1/1.06;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:2px;border-radius:12px;cursor:pointer;margin:1px}
+.cell .d{font-size:15px;font-weight:500}
+.cell .b{font-size:9px;line-height:1;padding:1px 4px;border-radius:6px;background:var(--accent);color:#fff;font-weight:600}
+.cell .t{font-size:9px;color:var(--sub)}
+.cell.rest{background:var(--tint-rest)} .cell.rest .t{color:var(--rest)}
+.cell.holiday{background:var(--tint-holiday)} .cell.holiday .t{color:var(--holiday)}
+.cell.swap{background:var(--tint-swap)} .cell.swap .t{color:var(--swap)}
+.cell.out{opacity:.32}
+.cell.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.cell .lv{position:absolute;top:3px;right:4px;font-size:8px;color:var(--holiday);font-weight:700}
+.list{margin-top:14px}
+.item{display:flex;align-items:center;gap:10px;padding:11px 2px;border-top:1px solid var(--line);font-size:14px}
+.item:first-child{border-top:0}
+.item .dt{font-weight:600;min-width:78px}
+.item .tag{font-size:11px;color:#fff;background:var(--accent);border-radius:6px;padding:1px 6px}
+.item .note{color:var(--sub);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .amt{margin-left:auto;font-weight:600;white-space:nowrap}
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;z-index:9}
+.mask.none{display:none}
+.sheet{background:var(--card);width:100%;max-width:640px;margin:0 auto;border-radius:22px 22px 0 0;
+  padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.sheet h3{margin:0 0 4px;font-size:19px;font-weight:600}
+.lb{font-size:12px;color:var(--sub);margin:14px 0 6px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:11px;
+  padding:8px 13px;font-size:13px;cursor:pointer;font-family:inherit}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+input,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px;
+  background:transparent;color:var(--text);font-family:inherit}
+textarea{min-height:64px;resize:vertical}
+.btns{display:flex;gap:10px;margin-top:18px}
+.btn{flex:1;border:0;border-radius:13px;padding:14px;font-size:16px;font-weight:600;cursor:pointer;
+  background:var(--accent);color:#fff;font-family:inherit}
+.btn.gh{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.dg{background:transparent;color:var(--holiday);border:1px solid var(--line)}
+.hint{font-size:12px;color:var(--sub);margin-top:10px;text-align:center}
+.diag{display:none}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="mask none" id="sheet"></div>
+<div class="diag" id="diag"></div>
+<script>
+var KEY='ot.v1',NOW=new Date();
+function pad(n){return (n<10?'0':'')+n}
+function key(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var S=load()||{cfg:{meal:20},days:{}};
+/* 兼容早前按"时薪×倍数"算出来的记录：把金额迁移成手动填写的加班费 */
+Object.keys(S.days||{}).forEach(function(k){var r=S.days[k];
+  if(r.fee==null){var t=r.t||'work';
+    r.fee=r.h>0?Math.round((+r.h||0)*(+r.r||S.cfg.rate||0)*(t==='holiday'?3:t==='rest'?2:1.5)):0}
+  delete r.r;});
+var ym={y:NOW.getFullYear(),m:NOW.getMonth()};
+var TYPES=[['work','工作日'],['rest','休息日'],['holiday','节假日'],['swap','调休']];
+var TCHAR={work:'班',rest:'休',holiday:'节',swap:'调'};
+function typeOf(k,dt){var r=S.days[k];if(r&&r.t)return r.t;var w=dt.getDay();return (w===0||w===6)?'rest':'work'}
+function isRest(t){return t==='rest'}          /* 调休按工作日算 */
+function pay(r,t){return +r.fee||0}            /* 加班费自己填写，不再自动计算 */
+function money(v){return '¥'+(Math.round(v*100)/100).toLocaleString('zh-CN')}
+function monthStat(y,m){
+  var st={h:0,money:0,meal:0,leave:0,work:0},D=new Date(y,m+1,0).getDate();
+  for(var i=1;i<=D;i++){
+    var k=key(new Date(y,m,i)),r=S.days[k];if(!r)continue;
+    var t=typeOf(k,new Date(y,m,i));
+    if(r.leave)st.leave++;
+    if(!isRest(t))st.work++;
+    st.h+=+r.h||0; st.money+=pay(r,t); st.meal+=+r.meal||0;
+  }
+  return st;
+}
+function monthDays(y,m){
+  var first=new Date(y,m,1),lead=(first.getDay()+6)%7,start=new Date(y,m,1-lead),out=[];
+  for(var i=0;i<42;i++){var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);out.push(d)}
+  return out;
+}
+function render(){
+  var t=new Date(),tk=key(t),st=monthStat(ym.y,ym.m),html='';
+  html+='<div class="row"><div><h1>加班记录</h1></div>'
+      +'<div class="nav"><button data-a="prev">‹</button><div class="mtitle">'+ym.y+' 年 '+(ym.m+1)+' 月</div>'
+      +'<button data-a="next">›</button><button data-a="cfg">⚙</button></div></div>';
+  html+='<div class="card"><div class="stats">'
+      +'<div><b>'+(Math.round(st.h*10)/10)+'</b><span>加班小时</span></div>'
+      +'<div><b>'+Math.round(st.money)+'</b><span>加班工资</span></div>'
+      +'<div><b>'+Math.round(st.meal)+'</b><span>餐补</span></div>'
+      +'<div><b>'+st.leave+'</b><span>请假天数</span></div></div>'
+      +'<div class="sub" style="margin-top:12px;text-align:center">本月出勤 '+st.work+' 天 · 点击日期填写加班</div>';
+  html+='<div class="wk"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div><div class="grid">';
+  monthDays(ym.y,ym.m).forEach(function(d){
+    var k=key(d),r=S.days[k],ty=typeOf(k,d),out=(d.getMonth()!==ym.m);
+    var cls='cell '+ty+(out?' out':'')+(k===tk?' today':'');
+    var line=r&&r.h>0?'<span class="b">'+(+r.h)+'h</span>':'<span class="t">'+TCHAR[ty]+'</span>';
+    html+='<div class="'+cls+'" data-d="'+k+'"><span class="d">'+d.getDate()+'</span>'+line
+        +(r&&r.leave?'<span class="lv">假</span>':'')+'</div>';
+  });
+  html+='</div></div>';
+  var items=[];
+  Object.keys(S.days).forEach(function(k){
+    var r=S.days[k];if(k.slice(0,7)!==ym.y+'-'+pad(ym.m+1))return;
+    if((+r.h||0)===0&&!r.leave&&!r.note)return;
+    items.push([k,r]);
+  });
+  items.sort(function(a,b){return a[0]<b[0]?1:-1});
+  html+='<div class="card list"><div class="row" style="margin-bottom:4px"><b style="font-size:15px">本月明细</b>'
+      +'<span class="sub">'+items.length+' 条</span></div>';
+  if(!items.length)html+='<div class="sub" style="padding:14px 0">本月还没有记录，点上面的日期开始吧</div>';
+  items.forEach(function(it){
+    var k=it[0],r=it[1],d=new Date(k.slice(0,4),k.slice(5,7)-1,k.slice(8,10)),t=typeOf(k,d);
+    html+='<div class="item" data-d="'+k+'"><span class="dt">'+(+k.slice(5,7))+'/'+(+k.slice(8,10))+'</span>'
+        +'<span class="tag" style="background:'+(t==='holiday'?'var(--holiday)':t==='rest'?'var(--rest)':t==='swap'?'var(--swap)':'var(--accent)')+'">'+TCHAR[t]+'</span>'
+        +(r.leave?'<span class="tag" style="background:var(--holiday)">假</span>':'')
+        +'<span class="note">'+((+r.h)||0)+'h'+(r.note?' · '+esc(r.note):'')+'</span>'
+        +'<span class="amt">'+money(pay(r,t)+(+r.meal||0))+'</span></div>';
+  });
+  html+='</div>';
+  document.getElementById('app').innerHTML=html+diagLine();
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function diagLine(){return '<div class="diag">DIAG cells=42 month='+ym.y+'-'+pad(ym.m+1)+' days='+Object.keys(S.days).length+'</div>'}
+function openSheet(inner){var el=document.getElementById('sheet');el.innerHTML='<div class="sheet">'+inner+'</div>';el.className='mask'}
+function closeSheet(){document.getElementById('sheet').className='mask none'}
+document.getElementById('sheet').addEventListener('click',function(e){if(e.target===this)closeSheet()});
+function daySheet(k){
+  var d=new Date(k.slice(0,4),k.slice(5,7)-1,k.slice(8,10)),r=S.days[k]||{},t=typeOf(k,d);
+  var h='<h3>'+ym.y+' 年 '+(+k.slice(5,7))+' 月 '+(+k.slice(8,10))+' 日</h3>'
+    +'<div class="sub">'+(['周日','周一','周二','周三','周四','周五','周六'][d.getDay()])+'</div>'
+    +'<div class="lb">日期类型（调休按工作日计算）</div><div class="chips" data-g="t">';
+  TYPES.forEach(function(x){h+='<button class="chip'+(t===x[0]?' on':'')+'" data-t="'+x[0]+'">'+x[1]+'</button>'});
+  h+='</div><div class="lb">加班时长（小时）</div><input id="f_h" type="number" step="0.5" inputmode="decimal" value="'+(r.h!=null?r.h:'')+'" placeholder="例如 2.5">'
+    +'<div class="lb">加班费（元，自己填写）</div><input id="f_fee" type="number" step="1" inputmode="decimal" value="'+(r.fee!=null?r.fee:'')+'" placeholder="例如 300">'
+    +'<div class="lb">餐补（元）</div><input id="f_meal" type="number" step="1" inputmode="decimal" value="'+(r.meal!=null?r.meal:S.cfg.meal)+'">'
+    +'<div class="lb">加班内容 / 备注</div><textarea id="f_note" placeholder="例如：陪客户对账、赶报表">'+(r.note?esc(r.note):'')+'</textarea>'
+    +'<div class="chips" style="margin-top:14px"><button class="chip'+(r.leave?' on':'')+'" data-a="leave">请假标签</button></div>'
+    +'<div class="btns"><button class="btn" data-a="save">保存</button>'
+    +(r.h!=null||r.fee||r.leave||r.note?'<button class="btn dg" data-a="del">删除</button>':'')
+    +'<button class="btn gh" data-a="close">取消</button></div>';
+  openSheet(h);
+  daySheet.k=k; daySheet.t=t; daySheet.leave=!!r.leave;
+}
+function cfgSheet(){
+  var c=S.cfg;
+  openSheet('<h3>设置</h3><div class="sub">加班费每天自己填，这里只设默认餐补</div>'
+    +'<div class="lb">默认餐补（元/天）</div><input id="c_meal" type="number" inputmode="decimal" value="'+c.meal+'">'
+    +'<div class="btns"><button class="btn" data-a="cfgsave">保存</button><button class="btn gh" data-a="close">取消</button></div>'
+    +'<div class="btns"><button class="btn gh" data-a="exp">导出备份</button><button class="btn gh" data-a="imp">导入备份</button></div>'
+    +'<input type="file" id="f_imp" accept=".json" style="display:none">');
+}
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-a],[data-t],[data-d]');if(!el)return;
+  var a=el.getAttribute('data-a'),t=el.getAttribute('data-t'),d=el.getAttribute('data-d');
+  if(d){daySheet(d);return}
+  if(t){daySheet.t=t;var p=el.parentNode;for(var i=0;i<p.children.length;i++)p.children[i].className='chip';el.className='chip on';return}
+  if(a==='prev'){ym.m--;if(ym.m<0){ym.m=11;ym.y--}render();return}
+  if(a==='next'){ym.m++;if(ym.m>11){ym.m=0;ym.y++}render();return}
+  if(a==='cfg'){cfgSheet();return}
+  if(a==='close'){closeSheet();return}
+  if(a==='leave'){daySheet.leave=!daySheet.leave;el.className='chip'+(daySheet.leave?' on':'');return}
+  if(a==='save'){
+    var k=daySheet.k,r=S.days[k]||{};
+    r.t=daySheet.t; r.h=parseFloat(document.getElementById('f_h').value)||0;
+    r.meal=parseFloat(document.getElementById('f_meal').value)||0;
+    r.note=document.getElementById('f_note').value.trim();
+    r.fee=parseFloat(document.getElementById('f_fee').value)||0;
+    r.leave=daySheet.leave;
+    if(!r.h&&!r.fee&&!r.meal&&!r.note&&!r.leave)delete S.days[k]; else S.days[k]=r;
+    save();closeSheet();render();return;
+  }
+  if(a==='del'){delete S.days[daySheet.k];save();closeSheet();render();return}
+  if(a==='cfgsave'){
+    S.cfg.meal=parseFloat(document.getElementById('c_meal').value)||S.cfg.meal;
+    save();closeSheet();render();return;
+  }
+  if(a==='exp'){
+    var b=new Blob([JSON.stringify(S,null,1)],{type:'application/json'}),u=URL.createObjectURL(b),l=document.createElement('a');
+    l.href=u;l.download='加班记录备份.json';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u)},2000);return;
+  }
+  if(a==='imp'){document.getElementById('f_imp').click();return}
+});
+document.addEventListener('change',function(e){
+  if(e.target.id==='f_imp'&&e.target.files[0]){
+    var fr=new FileReader();
+    fr.onload=function(){try{var o=JSON.parse(fr.result);if(o.days){S=o;if(!S.cfg.m)S.cfg.m={work:1.5,rest:2,holiday:3};save();closeSheet();render()}}catch(x){alert('备份文件无法识别')}};
+    fr.readAsText(e.target.files[0]);
+  }
+});
+/* 图标与应用清单都用运行时生成，省掉图片文件 */
+function icon(size){
+  var c=document.createElement('canvas');c.width=c.height=size;var g=c.getContext('2d');
+  g.fillStyle='#0071e3';g.fillRect(0,0,size,size);
+  g.fillStyle='#fff';g.font='600 '+size*0.5+'px -apple-system,sans-serif';
+  g.textAlign='center';g.textBaseline='middle';g.fillText('时',size/2,size/2+size*0.03);
+  return c.toDataURL('image/png');
+}
+try{
+  var man={name:'加班记录',short_name:'加班记录',start_url:'./',display:'standalone',
+    background_color:'#f5f5f7',theme_color:'#f5f5f7',
+    icons:[{src:icon(192),sizes:'192x192',type:'image/png'},{src:icon(512),sizes:'512x512',type:'image/png'}]};
+  var mb=new Blob([JSON.stringify(man)],{type:'application/manifest+json'});
+  var ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(mb);document.head.appendChild(ml);
+  var ai=document.createElement('link');ai.rel='apple-touch-icon';ai.href=icon(180);document.head.appendChild(ai);
+  if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(function(){});
+}catch(e){}
+window.onerror=function(m){var d=document.getElementById('diag');if(d)d.textContent='JSERROR '+m;return false};
+render();
+</script>
+</body>
+</html>
